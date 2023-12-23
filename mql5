@@ -1,0 +1,76 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                     Trus.mq5     |
+//|                  Copyright 2021, Forex Robot Easy Team            |
+//|                 https://www.forexroboteasy.com                    |
+//+------------------------------------------------------------------+
+
+//--- Include necessary libraries
+#include <Trade\Trade.mqh>
+
+//--- Indicator initialization function
+int OnInit()
+{
+    //--- Indicator parameters
+    int period = 14; // Period for smoothing calculations
+    int deviation = 2; // Deviation for bollinger bands
+    int newsImpact = 5; // Impact factor of economic and political news
+
+    //--- Indicator buffers
+    SetIndexBuffer(0, ExtMapBuffer1);
+    SetIndexStyle(0, DRAW_LINE);
+    SetIndexBuffer(1, ExtMapBuffer2);
+    SetIndexStyle(1, DRAW_LINE);
+
+    //--- Initializing trade class
+    CTrade trade;
+    
+    //--- Main loop
+    for (int i = period; i < Bars; i++)
+    {
+        //--- Calculate bollinger bands
+        double upperBand = iBands(_Symbol, _Period, period, deviation, PRICE_CLOSE, MODE_UPPER, i);
+        double lowerBand = iBands(_Symbol, _Period, period, deviation, PRICE_CLOSE, MODE_LOWER, i);
+        
+        //--- Calculate trend intensity based on historical data
+        double trendIntensity = MathAbs((iClose(_Symbol, _Period, i) - iClose(_Symbol, _Period, i - period)) / period);
+        
+        //--- Analyze economic and political news
+        bool isAnomaly = AnalyzeNews(iTime(_Symbol, _Period, i), newsImpact);
+        
+        //--- Check if price movement is stable and not distorted by sharp fluctuations
+        if (iClose(_Symbol, _Period, i) > upperBand && !isAnomaly)
+        {
+            ExtMapBuffer1[i] = 1; // Bullish trend
+        }
+        else if (iClose(_Symbol, _Period, i) < lowerBand && !isAnomaly)
+        {
+            ExtMapBuffer2[i] = -1; // Bearish trend
+        }
+        
+        //--- Predict trend duration and intensity
+        if (trendIntensity > 0.5)
+        {
+            trade.Buy(); // Place buy order
+        }
+        else if (trendIntensity < 0.3)
+        {
+            trade.Sell(); // Place sell order
+        }
+    }
+
+    return(INIT_SUCCEEDED);
+}
+
+//--- Event handling function
+void OnTick()
+{
+    //--- Perform necessary actions on tick event
+}
+
+//--- Analyze economic and political news
+bool AnalyzeNews(datetime time, int impact)
+{
+    //--- Perform analysis and return true if anomaly found, false otherwise
+    return false;
+}
